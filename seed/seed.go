@@ -16,6 +16,9 @@ type Address struct {
 	Pincode json.Number
 }
 
+type Uinterface interface {
+}
+
 var Employees = []User{
 	{
 		Name:    "Chakravarthy",

@@ -8,3 +8,5 @@ func Stat(path string) (file os.FileInfo, err error) {
 	}
 	return
 }
+
+//stat is used to check the existence of the given filepath.

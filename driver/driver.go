@@ -170,14 +170,14 @@ func (d *Driver) Delete(collection string, filename string, v interface{}) error
 
 	dir := filepath.Join(d.directory, pathToTheCollection)
 
-	switch fi, err := utils.Stat(dir); {
-	case fi == nil, err != nil:
-		return fmt.Errorf("Unable to the file or Directory '%v'\n .", pathToTheCollection)
+	switch file, err := utils.Stat(dir); {
+	case file == nil, err != nil:
+		return fmt.Errorf("unable to the file or directory '%v'", pathToTheCollection)
 
-	case fi.Mode().IsDir():
+	case file.Mode().IsDir():
 		return os.RemoveAll(dir)
 
-	case fi.Mode().IsRegular():
+	case file.Mode().IsRegular():
 		return os.RemoveAll(dir + ".json")
 	default:
 		return nil

@@ -16,7 +16,6 @@ const VERSION = "1.0.1"
 type (
 	Logger interface {
 		Fatal(string, ...interface{})
-		Log(string, ...interface{})
 		Error(string, ...interface{})
 		Debug(string, ...interface{})
 		Info(string, ...interface{})
@@ -46,7 +45,7 @@ func New(directory string, options *Options) (*Driver, error) {
 	}
 
 	if opts.Logger == nil {
-		opts.Logger = lumber.NewConsoleLogger(lumber.Info)
+		opts.Logger = lumber.NewConsoleLogger(lumber.INFO)
 	}
 
 	driver := Driver{
@@ -66,10 +65,11 @@ func New(directory string, options *Options) (*Driver, error) {
 
 }
 
-func stat(path string) (fi os.FileInfo, err error) {
-	if fi, err := os.Stat(path); os.IsNotExist(err) {
-		fi, err = os.Stat(path + ".json")
+func stat(path string) (file os.FileInfo, err error) {
+	if file, err = os.Stat(path); os.IsNotExist(err) {
+		file, err = os.Stat(path + ".json")
 	}
+	return
 }
 
 func (d *Driver) Write(collection string, filename string, v interface{}) error {
@@ -108,22 +108,99 @@ func (d *Driver) Write(collection string, filename string, v interface{}) error 
 		return err
 	}
 
-}
-
-func (d *Driver) Read() error {
+	return os.Rename(temporayPath, fnlPath)
 
 }
 
-func (d *Driver) ReadAll() error {
+func (d *Driver) Read(collection string, resource string, v interface{}) error {
+
+	if collection == "" {
+		fmt.Errorf("Missing Collection name : Please enter the collection name")
+	}
+
+	if resource == "" {
+		fmt.Errorf("Missing resource")
+	}
+
+	record := filepath.Join(d.directory, collection, resource)
+
+	if _, err := stat(record); err != nil {
+		return err
+	}
+
+	b, err := ioutil.ReadFile(record + ".json")
+
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, &v)
+}
+
+func (d *Driver) ReadAll(collection string) ([]string, error) {
+
+	if collection == "" {
+		err := fmt.Errorf("Invalid Collection:")
+		return nil, err
+	}
+
+	dir := filepath.Join(d.directory, collection+".json")
+
+	if _, err := stat(dir); err != nil {
+		return nil, err
+	}
+
+	files, _ := ioutil.ReadDir(dir)
+
+	var records []string
+	for _, file := range files {
+		buffer, err := ioutil.ReadFile(filepath.Join(dir, file.Name()))
+
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, string(buffer))
+	}
+
+	return records, nil
 
 }
 
-func (d *Driver) Delete() error {
+func (d *Driver) Delete(collection string, filename string, v interface{}) error {
 
+	pathToTheCollection := filepath.Join(collection, filename)
+	mutex := d.GetOrCreateMutex(collection)
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	dir := filepath.Join(d.directory, pathToTheCollection)
+
+	switch fi, err := stat(dir); {
+	case fi == nil, err != nil:
+		return fmt.Errorf("Unable to the file or Directory '%v'\n .", pathToTheCollection)
+
+	case fi.Mode().IsDir():
+		return os.RemoveAll(dir)
+
+	case fi.Mode().IsRegular():
+		return os.RemoveAll(dir + ".json")
+	default:
+		return nil
+	}
 }
 
-func (d *Driver) GetOrCreateMutex() *sync.Mutex {
+func (d *Driver) GetOrCreateMutex(collection string) *sync.Mutex {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	m, ok := d.mutexes[collection]
 
+	if !ok {
+		m = &sync.Mutex{}
+		d.mutexes[collection] = m
+	}
+
+	return m
 }
 
 type User struct {

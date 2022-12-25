@@ -50,12 +50,4 @@ func main() {
 
 	fmt.Println("All users", allUsers)
 
-	// if err := db.Delete("user", "john"); err != nil {
-	// 	fmt.Printf("Error", err)
-	// }
-
-	// if err := db.Delete("user", ""); err != nil {
-	// 	fmt.Printf("Error", err)
-	// }
-
 }

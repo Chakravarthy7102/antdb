@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	utils "github.com/chakravarthy712/antdb/utils"
 	"github.com/jcelliott/lumber"
 )
 
@@ -117,7 +118,7 @@ func (d *Driver) Read(collection string, resource string, v interface{}) error {
 
 	record := filepath.Join(d.directory, collection, resource)
 
-	if _, err := utils.stat(record); err != nil {
+	if _, err := utils.Stat(record); err != nil {
 		return err
 	}
 
@@ -139,7 +140,7 @@ func (d *Driver) ReadAll(collection string) ([]string, error) {
 
 	dir := filepath.Join(d.directory, collection+".json")
 
-	if _, err := utils.stat(dir); err != nil {
+	if _, err := utils.Stat(dir); err != nil {
 		return nil, err
 	}
 
@@ -169,7 +170,7 @@ func (d *Driver) Delete(collection string, filename string, v interface{}) error
 
 	dir := filepath.Join(d.directory, pathToTheCollection)
 
-	switch fi, err := utils.stat(dir); {
+	switch fi, err := utils.Stat(dir); {
 	case fi == nil, err != nil:
 		return fmt.Errorf("Unable to the file or Directory '%v'\n .", pathToTheCollection)
 
